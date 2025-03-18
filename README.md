@@ -1,54 +1,95 @@
-# React + TypeScript + Vite
+# 🏁 Multiplayer Open-World Racing Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Built with **React**, **Three.js**, **Colyseus**, and **React Three Fiber**
 
-Currently, two official plugins are available:
+Multiplayer racing game where players freely drive various vehicles (cars or bikes) across terrains featuring gentle hills and valleys. Earn points by reaching illuminated checkpoints visible from far away.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 🌟 Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Real-time Multiplayer:** Compete with other players online.
+- **Vehicle Selection:** Choose cars or bikes, each with unique handling.
+- **Open-World Terrain:** No fixed tracks; explore a landscape with hills and valleys.
+- **Checkpoint System:** Earn points by reaching illuminated checkpoints.
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+---
+
+## 🚀 Tech Stack
+
+- **React + TypeScript**
+- **Three.js (React Three Fiber)**
+- **Colyseus** (Real-time multiplayer)
+- **Vite** (Development & Bundling)
+
+---
+
+## ⚙️ Installation & Running
+
+Clone the repository:
+
+```bash
+git clone https://github.com/jeffz7/my-react-3js-game.git
+cd my-react-3js-game
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Start the multiplayer server:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+node server.cjs
 ```
+
+Start the frontend (React + Three.js):
+
+```bash
+npm run dev
+```
+
+Then open your browser at `http://localhost:5173`
+
+---
+
+## 📂 Project Structure
+
+```
+my-react-3js-game/
+├── public/
+│   └── textures/
+│       └── terrain.jpg
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── components/
+│   │   ├── CanvasScene.tsx
+│   │   ├── Terrain.tsx
+│   │   ├── Vehicle.tsx
+│   │   └── OnlineUsers.tsx
+│   └── contexts/
+│       └── MultiplayerContext.tsx
+├── server.cjs
+├── package.json
+├── tsconfig.json
+└── vite.config.ts
+```
+
+---
+
+## 🎯 Next Steps
+
+- Integrate vehicle physics (Ammo.js or Rapier.js)
+- Implement detailed multiplayer synchronization
+- Expand checkpoint logic and scoring
+- Add vehicle customization options
+
+---
+
+## 🙌 Contributing
+
+Feel free to submit issues or pull requests!
+
+---
+
+## 📜 License
+
+MIT License
