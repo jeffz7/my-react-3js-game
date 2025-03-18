@@ -1,6 +1,6 @@
 // src/components/CanvasScene.tsx
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, Sky } from "@react-three/drei";
+import { Environment, Sky } from "@react-three/drei";
 import { Suspense } from "react";
 import Terrain from "./Terrain";
 import Vehicle from "./Vehicle";
@@ -18,8 +18,6 @@ export default function CanvasScene() {
         <Terrain />
         <Vehicle />
       </Suspense>
-
-      <OrbitControls />
     </Canvas>
   );
 }

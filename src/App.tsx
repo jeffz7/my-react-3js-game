@@ -1,16 +1,19 @@
 // src/App.tsx
+import { useContext } from "react";
 import CanvasScene from "./components/CanvasScene";
 import OnlineUsers from "./components/OnlineUsers";
-import { MultiplayerProvider } from "./contexts/MultiplayerContext";
+import LoginScreen from "./components/LoginScreen";
+import { UserContext } from "./contexts/UserContext";
 
 function App() {
+  const { isLoggedIn } = useContext(UserContext);
+
   return (
-    <MultiplayerProvider>
-      <div style={{ width: "100vw", height: "100vh" }}>
-        <CanvasScene />
-        <OnlineUsers />
-      </div>
-    </MultiplayerProvider>
+    <div style={{ width: "100vw", height: "100vh" }}>
+      <CanvasScene />
+      <OnlineUsers />
+      {!isLoggedIn && <LoginScreen />}
+    </div>
   );
 }
 

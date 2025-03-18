@@ -1,5 +1,5 @@
 // src/components/Terrain.tsx
-import { useRef } from "react";
+// import { useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import { TextureLoader } from "three";
 
