@@ -9,9 +9,7 @@ interface JeepProps {
 
 export default function Jeep({ color = "#2c7f30" }: JeepProps) {
   const groupRef = useRef<Group>(null);
-  const { nodes, materials } = useGLTF(
-    "/assets/models/jeep_wrangler_1997.glb"
-  ) as any;
+  const { nodes, materials } = useGLTF("/assets/models/jeep.glb") as any;
 
   // Wheel references exposed for animation
   const wheelsRef = useRef({
@@ -28,92 +26,133 @@ export default function Jeep({ color = "#2c7f30" }: JeepProps) {
   }, []);
 
   return (
-    <group ref={groupRef} dispose={null} scale={0.5} position={[0, 3, 0]}>
-      {/* Main Body */}
-      <primitive object={nodes.Body} />
-
-      {/* Body Paint */}
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.Body_body_paint_0.geometry}
-        material={nodes.Body_body_paint_0.material}
-      >
-        <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
-      </mesh>
-
-      {/* Windows */}
-      {Object.keys(nodes)
-        .filter((key) => key.toLowerCase().includes("glass"))
-        .map((key) => (
+    <group ref={groupRef} dispose={null} scale={0.5} position={[0, 0, 0]}>
+      <group scale={0.01}>
+        <group position={[0, 42.076, 0]}>
+          <group position={[0, -53.508, 0]}>
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.tireBackRight_tires_0.geometry}
+              material={materials.tires}
+              position={[-89.951, 46.625, -107.81]}
+            />
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.tireBackLeft_tires_0.geometry}
+              material={materials.tires}
+              position={[89.951, 46.625, -107.81]}
+            />
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.tireFrontRight_tires_0.geometry}
+              material={materials.tires}
+              position={[-80.629, 46.625, 134.15]}
+            />
+            <mesh
+              castShadow
+              receiveShadow
+              geometry={nodes.tireFrontLeft_tires_0.geometry}
+              material={materials.tires}
+              position={[80.629, 46.625, 134.15]}
+            />
+          </group>
           <mesh
-            key={key}
             castShadow
             receiveShadow
-            geometry={nodes[key].geometry}
-            material={nodes[key].material}
-          >
-            <meshStandardMaterial
-              color="#111111"
-              roughness={0.1}
-              metalness={0.9}
-              opacity={0.6}
-              transparent
-            />
-          </mesh>
-        ))}
-
-      {/* Wheels */}
-      <mesh
-        ref={wheelsRef.current.frontRight}
-        castShadow
-        geometry={nodes.Wheel_R_1.geometry}
-        material={nodes.Wheel_R_1.material}
-      />
-      <mesh
-        ref={wheelsRef.current.frontLeft}
-        castShadow
-        geometry={nodes.Wheel_L_1.geometry}
-        material={nodes.Wheel_L_1.material}
-      />
-      <mesh
-        ref={wheelsRef.current.backRight}
-        castShadow
-        geometry={nodes.Rear_wheel1.geometry}
-        material={nodes.Rear_wheel1.material}
-      />
-      <mesh
-        ref={wheelsRef.current.backLeft}
-        castShadow
-        geometry={nodes.Rear_wheel1.geometry}
-        material={nodes.Rear_wheel1.material}
-        position={[
-          -nodes.Rear_wheel1.position.x,
-          nodes.Rear_wheel1.position.y,
-          nodes.Rear_wheel1.position.z,
-        ]}
-      />
-
-      {/* Lights (lamps) */}
-      {["Head_lamp_L", "Head_lamp_R", "Rear_lamp_L", "Rear_lamp_R"].map(
-        (key) => (
+            geometry={nodes.glass_jeepwindows_0.geometry}
+            material={materials.jeepwindows}
+            position={[0, 94.884, 31.763]}
+          />
           <mesh
-            key={key}
-            geometry={nodes[key]?.geometry}
-            material={nodes[key]?.material}
-          >
-            <meshStandardMaterial emissive="#ffcc00" emissiveIntensity={0.8} />
-          </mesh>
-        )
-      )}
-
-      {/* Roof and details */}
-      <primitive object={nodes.Roof} />
-      <primitive object={nodes.front_bumper} />
-      <primitive object={nodes.Rear_Bumper} />
-      <primitive object={nodes["Spear_Tire_cover"]} />
+            castShadow
+            receiveShadow
+            geometry={nodes.body_jeep_0.geometry}
+            material={materials.jeep}
+            position={[0, -11.969, 0]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.axleBackLeft_jeep_0.geometry}
+            material={materials.jeep}
+            position={[15.118, -6.883, -107.81]}
+            rotation={[0, -Math.PI / 2, 0]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.axleBackRight_jeep_0.geometry}
+            material={materials.jeep}
+            position={[-15.118, -6.883, -107.81]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.axleFrontLeft_jeep_0.geometry}
+            material={materials.jeep}
+            position={[15.118, -6.883, 134.15]}
+            rotation={[0, -Math.PI / 2, 0]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.axleFrontRight_jeep_0.geometry}
+            material={materials.jeep}
+            position={[-15.118, -6.883, 134.15]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.suspensionBackLeft_jeep_0.geometry}
+            material={materials.jeep}
+            position={[61.339, -6.883, -118.405]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.suspensionBackRight_jeep_0.geometry}
+            material={materials.jeep}
+            position={[-61.339, -6.883, -118.405]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.suspensionFrontLeft_jeep_0.geometry}
+            material={materials.jeep}
+            position={[54.511, -6.883, 143.614]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.suspensionFrontRight_jeep_0.geometry}
+            material={materials.jeep}
+            position={[-54.511, -6.883, 143.614]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.poke_jeep_0.geometry}
+            material={materials.jeep}
+            position={[0, 36.028, 19.275]}
+            rotation={[-0.18, 0, 0]}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.steeringwheel_jeep_0.geometry}
+            material={materials.jeep}
+            position={[38.957, 90.926, 1.049]}
+            rotation={[-Math.PI / 4, 0, 0]}
+          />
+        </group>
+      </group>
     </group>
   );
 }
 
-useGLTF.preload("/assets/models/jeep_wrangler_1997.glb");
+useGLTF.preload("/assets/models/jeep.glb");

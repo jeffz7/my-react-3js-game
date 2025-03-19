@@ -8,12 +8,10 @@ import { UserContext } from "../../contexts/UserContext";
 import { MultiplayerContext } from "../../contexts/MultiplayerContext";
 import ThirdPersonCamera from "../Camera/ThirdPersonCamera";
 import VehicleHUD from "../../components/VehicleHUD";
-import Sedan from "../../components/vehicles/Sedan";
 import useInputControls from "./hooks/useInputControls";
 import useVehiclePhysics from "./hooks/useVehiclePhysics";
 import useMultiplayerSync from "../Multiplayer/hooks/useMultiplayerSync";
 import Jeep from "../../components/vehicles/Jeep";
-import Beetle from "../../components/vehicles/Beetle";
 import { Html } from "@react-three/drei";
 
 interface VehicleProps {
@@ -84,7 +82,7 @@ const Vehicle = forwardRef<Group | null, VehicleProps>(
       <group ref={vehicleRef}>
         <ThirdPersonCamera target={vehicleRef} />
 
-        <Beetle />
+        <Jeep />
 
         {username && (
           <Html position={[0, 2.2, 0]} center>

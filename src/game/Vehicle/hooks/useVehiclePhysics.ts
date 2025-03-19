@@ -1,3 +1,5 @@
+// src/game/Vehicle/hooks/useVehiclePhysics.ts
+
 import { useRef, useState, useEffect } from "react";
 import { Group, Vector3 } from "three";
 import { useFrame } from "@react-three/fiber";

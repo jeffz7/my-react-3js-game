@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Group } from "three";
 import Jeep from "../../components/vehicles/Jeep";
-import Beetle from "../../components/vehicles/Beetle";
 
 interface RemotePlayer {
   username: string;
@@ -45,7 +44,7 @@ function RemoteVehicle({ player }: RemoteVehicleProps) {
 
   return (
     <group ref={vehicleRef}>
-      <Beetle /> {/* Different color for other players */}
+      <Jeep /> {/* Different color for other players */}
       <mesh position={[0, 2, 0]}>
         <boxGeometry args={[0.1, 0.1, 0.1]} />
         <meshBasicMaterial color="red" />

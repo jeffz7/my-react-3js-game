@@ -1,3 +1,5 @@
+// src/game/Camera/ThirdPersonCamera.tsx
+
 import { useRef } from "react";
 import { PerspectiveCamera } from "@react-three/drei";
 import { Group, PerspectiveCamera as ThreePerspectiveCamera } from "three";
