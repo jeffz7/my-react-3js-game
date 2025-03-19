@@ -1,60 +1,167 @@
 // src/contexts/MultiplayerContext.tsx
-import { createContext, useEffect, useState, ReactNode, useRef } from "react";
-import { Client, Room } from "colyseus.js";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useContext,
+} from "react";
+import { Room } from "colyseus.js";
+import {
+  connectToGameRoom,
+  disconnectFromGameRoom,
+} from "../utils/multiplayer";
+import { UserContext } from "./UserContext";
 
 interface MultiplayerContextType {
   room: Room | null;
-  onlineCount: number;
+  isConnecting: boolean;
+  error: string | null;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  onlinePlayers: string[];
+  remotePlayers: Map<string, RemotePlayer>;
 }
 
-const MultiplayerContext = createContext<MultiplayerContextType>({
+export const MultiplayerContext = createContext<MultiplayerContextType>({
   room: null,
-  onlineCount: 0,
+  isConnecting: false,
+  error: null,
+  connect: async () => {},
+  disconnect: () => {},
+  onlinePlayers: [],
+  remotePlayers: new Map(),
 });
 
-function MultiplayerProvider({ children }: { children: ReactNode }) {
+interface MultiplayerProviderProps {
+  children: ReactNode;
+}
+
+// Add this interface to track remote players
+interface RemotePlayer {
+  username: string;
+  x: number;
+  y: number;
+  z: number;
+  rotation: number;
+  speed: number;
+  steering: number;
+  lastUpdate: number;
+}
+
+export function MultiplayerProvider({ children }: MultiplayerProviderProps) {
   const [room, setRoom] = useState<Room | null>(null);
-  const [onlineCount, setOnlineCount] = useState(0);
-  const initializedRef = useRef(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [onlinePlayers, setOnlinePlayers] = useState<string[]>([]);
+  const { username, updateOnlineCount } = useContext(UserContext);
+  const [remotePlayers, setRemotePlayers] = useState<Map<string, RemotePlayer>>(
+    new Map()
+  );
 
-  useEffect(() => {
-    console.log(">>> initIAL LOAD");
+  // Connect to the game room
+  const connect = async () => {
+    if (!username) {
+      setError("Username is required to connect");
+      return;
+    }
 
-    if (initializedRef.current) return; // 👈 Prevent double initialization
+    setIsConnecting(true);
+    setError(null);
 
-    console.log(">>> initializedRef.current", initializedRef.current);
+    try {
+      const gameRoom = await connectToGameRoom(username);
+      setRoom(gameRoom);
 
-    initializedRef.current = true;
-    const client = new Client("ws://localhost:2567");
+      // Register message handlers
+      gameRoom.onMessage("onlinePlayers", (data) => {
+        console.log("Received onlinePlayers:", data);
+        setOnlinePlayers(data.players);
+        updateOnlineCount(data.count);
+      });
 
-    client.joinOrCreate("my_game_room").then((joinedRoom) => {
-      setRoom(joinedRoom);
-      console.log(
-        ">>> initializedRef.current AFTER JOIN",
-        initializedRef.current
+      gameRoom.onMessage("playerJoin", (data) => {
+        console.log("Player joined:", data);
+        setOnlinePlayers((prev) => [...prev, data.username]);
+        updateOnlineCount(data.onlineCount);
+      });
+
+      gameRoom.onMessage("playerLeave", (data) => {
+        console.log("Player left:", data);
+        setOnlinePlayers((prev) =>
+          prev.filter((name) => name !== data.username)
+        );
+        updateOnlineCount(data.onlineCount);
+      });
+
+      gameRoom.onMessage("playerUpdate", (message) => {
+        // Skip updates for the current player
+        if (message.username === username) return;
+        console.log("Player update:", message);
+
+        // Update the remote player's position and state
+        setRemotePlayers((prev) => {
+          const updated = new Map(prev);
+
+          // Create or update the player
+          updated.set(message.username, {
+            username: message.username,
+            x: message.x,
+            y: message.y,
+            z: message.z,
+            rotation: message.rotation,
+            speed: message.speed,
+            steering: message.steering,
+            lastUpdate: Date.now(),
+          });
+
+          return updated;
+        });
+      });
+    } catch (err) {
+      setError(
+        `Failed to connect: ${err instanceof Error ? err.message : String(err)}`
       );
-      joinedRoom.onMessage("onlineCount", (data: { count: number }) => {
-        setOnlineCount(data.count);
-      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
-      joinedRoom.onLeave(() => {
-        console.log(">>> BYE BYE");
+  // Auto-connect when username is available
+  useEffect(() => {
+    if (username && !room && !isConnecting) {
+      connect();
+    }
+  }, [username, room, isConnecting]);
 
-        setRoom(null);
-      });
-    });
+  // Disconnect from the game room
+  const disconnect = () => {
+    disconnectFromGameRoom(room);
+    setRoom(null);
+    setOnlinePlayers([]);
+    updateOnlineCount(0);
+  };
 
+  // Clean up on unmount
+  useEffect(() => {
     return () => {
-      room?.leave();
-      initializedRef.current = false;
+      disconnectFromGameRoom(room);
     };
-  }, []);
+  }, [room]);
 
   return (
-    <MultiplayerContext.Provider value={{ room, onlineCount }}>
+    <MultiplayerContext.Provider
+      value={{
+        room,
+        isConnecting,
+        error,
+        connect,
+        disconnect,
+        onlinePlayers,
+        remotePlayers,
+      }}
+    >
       {children}
     </MultiplayerContext.Provider>
   );
 }
-
-export { MultiplayerContext, MultiplayerProvider };

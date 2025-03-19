@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
+import { checkUsernameAvailability as checkUsernameOnServer } from "../utils/multiplayer";
 
 type UserContextType = {
   username: string | null;
@@ -7,6 +8,8 @@ type UserContextType = {
   logout: () => void;
   checkUsernameAvailability: (username: string) => Promise<boolean>;
   loginError: string | null;
+  onlineUsers: number;
+  updateOnlineCount: (count: number) => void;
 };
 
 export const UserContext = createContext<UserContextType>({
@@ -16,6 +19,8 @@ export const UserContext = createContext<UserContextType>({
   logout: () => {},
   checkUsernameAvailability: async () => true,
   loginError: null,
+  onlineUsers: 0,
+  updateOnlineCount: () => {},
 });
 
 // In-memory storage of usernames (would be replaced by DB in production)
@@ -25,6 +30,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [username, setUsernameState] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState(0);
 
   // Load username from localStorage on initial render
   useEffect(() => {
@@ -37,6 +43,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setUsername = (name: string) => {
+    console.log(">> setUsername", name);
+
     setUsernameState(name);
     localStorage.setItem("username", name);
     activeUsernames.add(name);
@@ -59,6 +67,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     if (name.length < 3) {
       setLoginError("Username must be at least 3 characters long");
+
       return false;
     }
 
@@ -69,13 +78,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    // Check if username is already taken
-    if (activeUsernames.has(name)) {
+    // Check if username is available on the server
+    const isAvailable = await checkUsernameOnServer(name);
+
+    if (!isAvailable) {
       setLoginError("Username is already taken");
       return false;
     }
 
     return true;
+  };
+
+  // Function to update online user count (called from MultiplayerContext)
+  const updateOnlineCount = (count: number) => {
+    setOnlineUsers(count);
   };
 
   return (
@@ -87,6 +103,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         logout,
         checkUsernameAvailability,
         loginError,
+        onlineUsers,
+        updateOnlineCount,
       }}
     >
       {children}

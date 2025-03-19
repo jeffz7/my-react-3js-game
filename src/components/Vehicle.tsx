@@ -1,7 +1,13 @@
 // src/components/Vehicle.tsx
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState, useEffect } from "react";
-import { Group, Vector3, Quaternion, Euler } from "three";
+import {
+  Group,
+  Vector3,
+  Quaternion,
+  Euler,
+  PerspectiveCamera as ThreePerspectiveCamera,
+} from "three";
 import { useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { MultiplayerContext } from "../contexts/MultiplayerContext";
@@ -10,7 +16,7 @@ import "../css/Vehicle.css";
 
 export default function Vehicle() {
   const vehicleRef = useRef<Group>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+  const cameraRef = useRef<ThreePerspectiveCamera>(null);
   const wheelsRef = useRef<Group[]>([]);
   const [speed, setSpeed] = useState(0);
   const [distance, setDistance] = useState(0);

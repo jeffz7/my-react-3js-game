@@ -1,12 +1,14 @@
 // src/components/OnlineUsers.tsx
 import { useContext } from "react";
 import { MultiplayerContext } from "../contexts/MultiplayerContext";
+import { UserContext } from "../contexts/UserContext";
 
 export default function OnlineUsers() {
-  const context = useContext(MultiplayerContext);
-  if (!context) return null;
+  const mpContext = useContext(MultiplayerContext);
+  const userContext = useContext(UserContext);
 
-  const { onlineCount } = context;
+  if (!mpContext) return null;
+
   return (
     <div
       style={{
@@ -20,7 +22,7 @@ export default function OnlineUsers() {
         zIndex: 100,
       }}
     >
-      🟢 Live Users: {onlineCount}
+      🟢 Live Users: {userContext.onlineUsers}
     </div>
   );
 }

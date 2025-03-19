@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@colyseus/schema": "^3.0.22",
+    "@colyseus/schema": "^3.0.24",
     "@react-three/drei": "^10.0.4",
     "@react-three/fiber": "^9.1.0",
     "colyseus": "^0.16.3",
