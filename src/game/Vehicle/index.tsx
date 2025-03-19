@@ -13,12 +13,14 @@ import useInputControls from "./hooks/useInputControls";
 import useVehiclePhysics from "./hooks/useVehiclePhysics";
 import useMultiplayerSync from "../Multiplayer/hooks/useMultiplayerSync";
 import Jeep from "../../components/vehicles/Jeep";
+import Beetle from "../../components/vehicles/Beetle";
+import { Html } from "@react-three/drei";
 
 interface VehicleProps {
   updateVehicleStats?: (stats: { speed: number; distance: number }) => void;
 }
 
-const Vehicle = forwardRef<Group, VehicleProps>(
+const Vehicle = forwardRef<Group | null, VehicleProps>(
   ({ updateVehicleStats }, ref) => {
     const vehicleRef = useRef<Group | null>(null);
     const distanceTraveled = useRef(0);
@@ -68,37 +70,30 @@ const Vehicle = forwardRef<Group, VehicleProps>(
 
     // Rotate wheels based on speed and steering
     useFrame(() => {
-      if (!vehicleRef.current) return;
-
-      const wheels = vehicleRef.current.userData.wheels;
-      if (!wheels) return;
-
-      // Rotate all wheels based on speed
-      const wheelRotationSpeed = speed * 0.01;
-
-      Object.values(wheels).forEach((wheelRef: any) => {
-        if (wheelRef.current) {
-          wheelRef.current.rotation.x += wheelRotationSpeed;
-        }
-      });
-
-      // Apply steering to front wheels
-      if (wheels.frontLeft.current && wheels.frontRight.current) {
-        wheels.frontLeft.current.rotation.y = steering;
-        wheels.frontRight.current.rotation.y = steering;
+      const wheels = vehicleRef.current?.userData.wheels;
+      if (wheels) {
+        // Rotate wheels based on speed
+        wheels.frontLeft.current.rotation.x += speed;
+        wheels.frontRight.current.rotation.x += speed;
+        wheels.backLeft.current.rotation.x += speed;
+        wheels.backRight.current.rotation.x += speed;
       }
     });
 
     return (
-      <>
+      <group ref={vehicleRef}>
         <ThirdPersonCamera target={vehicleRef} />
 
-        <group ref={vehicleRef} position={[0, 0, 0]}>
-          <Jeep color="#2c7f30" />
-        </group>
+        <Beetle />
+
+        {username && (
+          <Html position={[0, 2.2, 0]} center>
+            <div className="player-name">{username}</div>
+          </Html>
+        )}
 
         {/* <VehicleHUD speed={speed} /> */}
-      </>
+      </group>
     );
   }
 );

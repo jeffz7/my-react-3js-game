@@ -1,5 +1,4 @@
 // components/vehicles/Jeep.tsx
-
 import { useRef, useEffect } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Group, Mesh } from "three";
@@ -9,151 +8,112 @@ interface JeepProps {
 }
 
 export default function Jeep({ color = "#2c7f30" }: JeepProps) {
-  const group = useRef<Group>(null);
+  const groupRef = useRef<Group>(null);
   const { nodes, materials } = useGLTF(
     "/assets/models/jeep_wrangler_1997.glb"
   ) as any;
 
-  // Create references for the wheels
-  const wheelFLRef = useRef<Mesh>(null);
-  const wheelFRRef = useRef<Mesh>(null);
-  const wheelBLRef = useRef<Mesh>(null);
-  const wheelBRRef = useRef<Mesh>(null);
+  // Wheel references exposed for animation
+  const wheelsRef = useRef({
+    frontLeft: useRef<Mesh>(null),
+    frontRight: useRef<Mesh>(null),
+    backLeft: useRef<Mesh>(null),
+    backRight: useRef<Mesh>(null),
+  });
 
-  // Update wheel rotation based on parent's movement
   useEffect(() => {
-    if (!group.current) return;
-
-    // Expose wheel references to parent
-    if (group.current) {
-      group.current.userData.wheels = {
-        frontLeft: wheelFLRef,
-        frontRight: wheelFRRef,
-        backLeft: wheelBLRef,
-        backRight: wheelBRRef,
-      };
+    if (groupRef.current) {
+      groupRef.current.userData.wheels = wheelsRef.current;
     }
   }, []);
 
   return (
-    <group ref={group} dispose={null} scale={0.7}>
-      {/* Jeep body */}
+    <group ref={groupRef} dispose={null} scale={0.5} position={[0, 3, 0]}>
+      {/* Main Body */}
+      <primitive object={nodes.Body} />
+
+      {/* Body Paint */}
       <mesh
         castShadow
         receiveShadow
-        geometry={nodes.body?.geometry}
-        position={[0, 0.8, 0]}
+        geometry={nodes.Body_body_paint_0.geometry}
+        material={nodes.Body_body_paint_0.material}
       >
         <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} />
       </mesh>
 
       {/* Windows */}
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.windows?.geometry}
-        position={[0, 1.4, 0]}
-      >
-        <meshStandardMaterial
-          color="#111111"
-          roughness={0.1}
-          metalness={0.9}
-          opacity={0.7}
-          transparent
-        />
-      </mesh>
-
-      {/* Bumpers and details */}
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.details?.geometry}
-        position={[0, 0.6, 0]}
-      >
-        <meshStandardMaterial color="#333333" roughness={0.5} metalness={0.7} />
-      </mesh>
-
-      {/* Lights */}
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.lights?.geometry}
-        position={[0, 1.1, 1.8]}
-      >
-        <meshStandardMaterial
-          color="#ffcc00"
-          emissive="#ffcc00"
-          emissiveIntensity={0.5}
-        />
-      </mesh>
+      {Object.keys(nodes)
+        .filter((key) => key.toLowerCase().includes("glass"))
+        .map((key) => (
+          <mesh
+            key={key}
+            castShadow
+            receiveShadow
+            geometry={nodes[key].geometry}
+            material={nodes[key].material}
+          >
+            <meshStandardMaterial
+              color="#111111"
+              roughness={0.1}
+              metalness={0.9}
+              opacity={0.6}
+              transparent
+            />
+          </mesh>
+        ))}
 
       {/* Wheels */}
-      <group position={[0.8, 0.4, 1.2]}>
-        <mesh
-          ref={wheelFRRef}
-          castShadow
-          receiveShadow
-          geometry={nodes.wheel?.geometry}
-        >
-          <meshStandardMaterial color="#111111" roughness={0.7} />
-        </mesh>
-      </group>
-
-      <group position={[-0.8, 0.4, 1.2]}>
-        <mesh
-          ref={wheelFLRef}
-          castShadow
-          receiveShadow
-          geometry={nodes.wheel?.geometry}
-        >
-          <meshStandardMaterial color="#111111" roughness={0.7} />
-        </mesh>
-      </group>
-
-      <group position={[0.8, 0.4, -1.2]}>
-        <mesh
-          ref={wheelBRRef}
-          castShadow
-          receiveShadow
-          geometry={nodes.wheel?.geometry}
-        >
-          <meshStandardMaterial color="#111111" roughness={0.7} />
-        </mesh>
-      </group>
-
-      <group position={[-0.8, 0.4, -1.2]}>
-        <mesh
-          ref={wheelBLRef}
-          castShadow
-          receiveShadow
-          geometry={nodes.wheel?.geometry}
-        >
-          <meshStandardMaterial color="#111111" roughness={0.7} />
-        </mesh>
-      </group>
-
-      {/* Roof rack with accessories */}
       <mesh
+        ref={wheelsRef.current.frontRight}
         castShadow
-        receiveShadow
-        geometry={nodes.roofrack?.geometry}
-        position={[0, 2.1, 0]}
-      >
-        <meshStandardMaterial color="#444444" roughness={0.6} />
-      </mesh>
-
-      {/* Spare tire */}
+        geometry={nodes.Wheel_R_1.geometry}
+        material={nodes.Wheel_R_1.material}
+      />
       <mesh
+        ref={wheelsRef.current.frontLeft}
         castShadow
-        receiveShadow
-        geometry={nodes.sparetire?.geometry}
-        position={[0, 1.2, -1.8]}
-      >
-        <meshStandardMaterial color="#111111" roughness={0.7} />
-      </mesh>
+        geometry={nodes.Wheel_L_1.geometry}
+        material={nodes.Wheel_L_1.material}
+      />
+      <mesh
+        ref={wheelsRef.current.backRight}
+        castShadow
+        geometry={nodes.Rear_wheel1.geometry}
+        material={nodes.Rear_wheel1.material}
+      />
+      <mesh
+        ref={wheelsRef.current.backLeft}
+        castShadow
+        geometry={nodes.Rear_wheel1.geometry}
+        material={nodes.Rear_wheel1.material}
+        position={[
+          -nodes.Rear_wheel1.position.x,
+          nodes.Rear_wheel1.position.y,
+          nodes.Rear_wheel1.position.z,
+        ]}
+      />
+
+      {/* Lights (lamps) */}
+      {["Head_lamp_L", "Head_lamp_R", "Rear_lamp_L", "Rear_lamp_R"].map(
+        (key) => (
+          <mesh
+            key={key}
+            geometry={nodes[key]?.geometry}
+            material={nodes[key]?.material}
+          >
+            <meshStandardMaterial emissive="#ffcc00" emissiveIntensity={0.8} />
+          </mesh>
+        )
+      )}
+
+      {/* Roof and details */}
+      <primitive object={nodes.Roof} />
+      <primitive object={nodes.front_bumper} />
+      <primitive object={nodes.Rear_Bumper} />
+      <primitive object={nodes["Spear_Tire_cover"]} />
     </group>
   );
 }
 
-// Preload the model
 useGLTF.preload("/assets/models/jeep_wrangler_1997.glb");
