@@ -1,6 +1,6 @@
 // src/components/CanvasScene.tsx
 import { Canvas } from "@react-three/fiber";
-import { Sky, Stars } from "@react-three/drei";
+import { Sky, Stars, Environment } from "@react-three/drei";
 import Vehicle from "../game/Vehicle";
 import Terrain from "../game/Terrain";
 import Checkpoints from "../game/Checkpoints";
@@ -19,28 +19,28 @@ export default function CanvasScene({ updateVehicleStats }: CanvasSceneProps) {
 
   return (
     <Canvas shadows camera={{ position: [0, 5, 10], fov: 60 }}>
+      {/* Scene lighting - consolidated to avoid duplicates */}
       <ambientLight intensity={0.5} />
       <directionalLight
-        position={[10, 10, 5]}
-        intensity={1}
+        position={[10, 15, 10]}
+        intensity={1.5}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
       />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 10, 7]} intensity={2} castShadow />
-
-      {/* Your own vehicle */}
-      <Vehicle updateVehicleStats={updateVehicleStats} />
-
-      {/* Remote players */}
-      <RemotePlayers players={remotePlayers} />
 
       {/* Environment */}
+      <Sky sunPosition={[100, 20, 100]} />
+      <Stars radius={200} depth={50} count={5000} factor={4} />
+
+      {/* Game elements */}
       <Terrain />
       <Checkpoints vehicleRef={vehicleRef} />
-      <Sky sunPosition={[100, 10, 100]} />
-      <Stars radius={100} depth={50} count={5000} factor={4} />
+      <Vehicle ref={vehicleRef} updateVehicleStats={updateVehicleStats} />
+      <RemotePlayers />
     </Canvas>
   );
 }

@@ -4,6 +4,7 @@ import { Group } from "three";
 import ThirdPersonCamera from "./ThirdPersonCamera";
 import FirstPersonCamera from "./FirstPersonCamera";
 import FixedCamera from "./FixedCamera";
+import useInputControls from "../Vehicle/hooks/useInputControls";
 
 interface VehicleCameraProps {
   target: React.RefObject<Group | null>;
@@ -11,8 +12,11 @@ interface VehicleCameraProps {
 
 export default function VehicleCamera({ target }: VehicleCameraProps) {
   const [cameraMode, setCameraMode] = useState<"third" | "first" | "fixed">(
-    "third"
+    "fixed"
   );
+
+  // Get input controls for camera zoom
+  const controls = useInputControls();
 
   // Handle camera switching
   useEffect(() => {
@@ -23,13 +27,17 @@ export default function VehicleCamera({ target }: VehicleCameraProps) {
     };
 
     window.addEventListener("keydown", handleKeyDown);
+    console.log(">>> cameraMode", cameraMode);
+
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Render the appropriate camera based on mode
   return (
     <>
-      {cameraMode === "third" && <ThirdPersonCamera target={target} />}
+      {cameraMode === "third" && (
+        <ThirdPersonCamera target={target} controls={controls} />
+      )}
       {cameraMode === "first" && <FirstPersonCamera target={target} />}
       {cameraMode === "fixed" && <FixedCamera target={target} />}
     </>

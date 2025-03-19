@@ -1,8 +1,8 @@
 // src/game/Vehicle/hooks/useVehiclePhysics.ts
 
-import { useRef, useState, useEffect } from "react";
-import { Group, Vector3 } from "three";
+import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Vector3, Group, Quaternion, Euler } from "three";
 
 interface VehiclePhysicsProps {
   vehicleRef: React.RefObject<Group | null>;
@@ -26,126 +26,133 @@ export default function useVehiclePhysics({
   const [rotation, setRotation] = useState(0);
 
   // Physics parameters
-  const maxSpeed = 40; // Maximum speed
-  const acceleration = 0.2; // Acceleration rate
-  const deceleration = 0.05; // Natural deceleration (friction/drag)
-  const brakeForce = 0.3; // Braking force
-  const steeringSpeed = 0.03; // How quickly steering changes
-  const maxSteering = 0.6; // Maximum steering angle
-  const steeringReturn = 0.1; // How quickly steering returns to center
-  const groundFriction = 0.98; // Ground friction (reduces speed)
+  const MAX_SPEED = 0.5;
+  const MAX_REVERSE_SPEED = MAX_SPEED * 0.5;
+  const ACCELERATION = 0.005;
+  const DECELERATION = 0.003;
+  const BRAKE_POWER = 0.01;
+  const NATURAL_DECELERATION = 0.001;
+  const STEERING_SPEED = 0.02;
+  const STEERING_RESET_SPEED = 0.03;
+  const MAX_STEERING = 0.8;
+  const STEERING_INFLUENCE = 0.9;
+  const SPEED_STEERING_REDUCTION = 0.7;
+
+  // Tilting parameters
+  const MAX_TILT_ANGLE = 0.1;
+  const TILT_FACTOR = 0.8;
 
   // Update vehicle physics
   useFrame((state, delta) => {
     if (!vehicleRef.current) return;
 
     // Calculate acceleration/deceleration
-    let speedChange = 0;
+    let acceleration = 0;
+    let targetSteering = 0;
 
-    // Apply acceleration
+    // Handle acceleration
     if (controls.forward) {
-      speedChange += acceleration;
+      acceleration = ACCELERATION;
+    } else if (controls.backward) {
+      acceleration = -ACCELERATION;
     }
 
-    // Apply reverse/braking
-    if (controls.backward) {
-      // If moving forward, apply stronger braking
-      if (speed > 0) {
-        speedChange -= brakeForce;
+    // Handle braking
+    if (controls.brake) {
+      if (Math.abs(speed) > 0.01) {
+        acceleration = speed > 0 ? -BRAKE_POWER : BRAKE_POWER;
       } else {
-        // Reverse at half the acceleration
-        speedChange -= acceleration * 0.5;
+        setSpeed(0);
       }
     }
 
-    // Apply braking
-    if (controls.brake) {
-      // Apply stronger braking force
-      speedChange -= Math.sign(speed) * brakeForce * 1.5;
+    // Natural deceleration when no input
+    if (!controls.forward && !controls.backward && !controls.brake) {
+      if (Math.abs(speed) < NATURAL_DECELERATION) {
+        setSpeed(0);
+      } else {
+        acceleration = speed > 0 ? -NATURAL_DECELERATION : NATURAL_DECELERATION;
+      }
     }
 
-    // Apply natural deceleration when no input
-    if (!controls.forward && !controls.backward) {
-      speedChange -= Math.sign(speed) * deceleration;
-    }
+    // Apply acceleration to speed
+    let newSpeed = speed + acceleration;
 
-    // Update speed with limits
-    let newSpeed = speed + speedChange;
+    // Clamp speed to max values
+    if (newSpeed > MAX_SPEED) newSpeed = MAX_SPEED;
+    if (newSpeed < -MAX_REVERSE_SPEED) newSpeed = -MAX_REVERSE_SPEED;
 
-    // Apply ground friction
-    newSpeed *= groundFriction;
-
-    // Ensure speed doesn't exceed limits
-    newSpeed = Math.max(Math.min(newSpeed, maxSpeed), -maxSpeed / 2);
-
-    // If speed is very small, stop completely (prevent creeping)
-    if (Math.abs(newSpeed) < 0.05) {
-      newSpeed = 0;
-    }
-
-    setSpeed(newSpeed);
-
-    // Calculate steering
-    let steeringChange = 0;
-
-    // Apply steering input
+    // Handle steering
     if (controls.left) {
-      steeringChange -= steeringSpeed;
-    }
-    if (controls.right) {
-      steeringChange += steeringSpeed;
-    }
-
-    // Apply steering with limits
-    let newSteering = steering + steeringChange;
-
-    // Return steering to center when no input
-    if (!controls.left && !controls.right) {
-      newSteering *= 1 - steeringReturn;
+      targetSteering = MAX_STEERING;
+    } else if (controls.right) {
+      targetSteering = -MAX_STEERING;
     }
 
-    // Limit steering angle
-    newSteering = Math.max(Math.min(newSteering, maxSteering), -maxSteering);
+    // Adjust steering based on speed
+    const speedFactor = Math.min(1, Math.abs(newSpeed) / MAX_SPEED);
+    const steeringInfluence =
+      STEERING_INFLUENCE - speedFactor * SPEED_STEERING_REDUCTION;
 
-    // Reduce steering effectiveness at higher speeds
-    const steeringFactor = Math.max(0.2, 1 - Math.abs(newSpeed) / maxSpeed);
+    // Gradually adjust steering towards target
+    let newSteering = steering;
+    if (targetSteering !== 0) {
+      // Apply steering with speed-based influence
+      const steeringDelta = (targetSteering - steering) * steeringInfluence;
+      newSteering += steeringDelta * STEERING_SPEED;
+    } else {
+      // Return steering to center
+      if (Math.abs(steering) < STEERING_RESET_SPEED) {
+        newSteering = 0;
+      } else {
+        newSteering +=
+          steering > 0 ? -STEERING_RESET_SPEED : STEERING_RESET_SPEED;
+      }
+    }
 
-    setSteering(newSteering);
+    // Clamp steering
+    if (newSteering > MAX_STEERING) newSteering = MAX_STEERING;
+    if (newSteering < -MAX_STEERING) newSteering = -MAX_STEERING;
 
-    // Update rotation based on steering and speed
-    const rotationChange = newSteering * newSpeed * 0.01;
-    const newRotation = rotation + rotationChange;
-    setRotation(newRotation);
+    // Update vehicle rotation based on steering and speed
+    // Only apply steering if we're moving
+    const rotationDelta =
+      Math.abs(newSpeed) > 0.01
+        ? newSteering * Math.abs(newSpeed) * 0.5 * (newSpeed > 0 ? 1 : -1)
+        : 0;
 
-    // Update position based on speed and rotation
-    const moveX = Math.sin(newRotation) * newSpeed * 0.1;
-    const moveZ = Math.cos(newRotation) * newSpeed * 0.1;
-
-    const newPosition = new Vector3(
-      position.x + moveX,
-      position.y,
-      position.z - moveZ
-    );
-
-    setPosition(newPosition);
-
-    // Apply position and rotation to vehicle
-    vehicleRef.current.position.copy(newPosition);
+    const newRotation = vehicleRef.current.rotation.y + rotationDelta;
     vehicleRef.current.rotation.y = newRotation;
 
-    // Tilt the vehicle slightly when steering
-    vehicleRef.current.rotation.z = -newSteering * 0.2;
+    // Calculate movement direction based on rotation
+    // The Jeep model is rotated 180 degrees, so we use (0,0,-1) as forward
+    const moveDirection = new Vector3(0, 0, -1).applyAxisAngle(
+      new Vector3(0, 1, 0),
+      newRotation
+    );
 
-    // Apply a slight pitch based on acceleration/deceleration
-    const accelerationPitch =
-      (speedChange > 0 ? -0.05 : 0.05) * Math.abs(speedChange) * 2;
-    vehicleRef.current.rotation.x = accelerationPitch;
+    // Apply movement
+    vehicleRef.current.position.addScaledVector(moveDirection, newSpeed);
+
+    // Apply vehicle tilting
+    const vehicleBody = vehicleRef.current.children[0];
+    if (vehicleBody) {
+      const targetRollTilt =
+        (-newSteering * MAX_TILT_ANGLE * Math.abs(newSpeed)) / MAX_SPEED;
+      const targetPitchTilt = -acceleration * 10 * MAX_TILT_ANGLE;
+
+      vehicleBody.rotation.z +=
+        (targetRollTilt - vehicleBody.rotation.z) * TILT_FACTOR * delta * 60;
+      vehicleBody.rotation.x +=
+        (targetPitchTilt - vehicleBody.rotation.x) * TILT_FACTOR * delta * 60;
+    }
+
+    // Update state
+    setSpeed(newSpeed);
+    setSteering(newSteering);
+    setPosition(vehicleRef.current.position.clone());
+    setRotation(newRotation);
   });
 
-  return {
-    speed,
-    steering,
-    position,
-    rotation,
-  };
+  return { speed, steering, position, rotation };
 }

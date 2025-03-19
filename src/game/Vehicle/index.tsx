@@ -1,6 +1,12 @@
 // src/game/Vehicle/index.tsx
 
-import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
 import { Group, Vector3 } from "three";
 import { useFrame } from "@react-three/fiber";
 import { useContext } from "react";
@@ -14,84 +20,130 @@ import useMultiplayerSync from "../Multiplayer/hooks/useMultiplayerSync";
 import Jeep from "../../components/vehicles/Jeep";
 import { Html } from "@react-three/drei";
 
-interface VehicleProps {
-  updateVehicleStats?: (stats: { speed: number; distance: number }) => void;
-}
+// Create a shared context for vehicle state
+export const VehicleStateContext = React.createContext({
+  speed: 0,
+  steering: 0,
+  position: new Vector3(),
+  rotation: 0,
+});
 
-const Vehicle = forwardRef<Group | null, VehicleProps>(
-  ({ updateVehicleStats }, ref) => {
-    const vehicleRef = useRef<Group | null>(null);
-    const distanceTraveled = useRef(0);
-    const lastPosition = useRef(new Vector3(0, 0, 0));
-
+const Vehicle = forwardRef(
+  (
+    { updateVehicleStats }: { updateVehicleStats?: (stats: any) => void },
+    ref
+  ) => {
+    const vehicleRef = useRef<Group>(null);
     const { username } = useContext(UserContext);
     const { room } = useContext(MultiplayerContext);
 
-    // Expose the vehicle ref to parent components
-    useImperativeHandle(ref, () => vehicleRef.current as Group);
+    // Create wheel refs
+    const wheelRefs = {
+      frontLeft: useRef(null),
+      frontRight: useRef(null),
+      backLeft: useRef(null),
+      backRight: useRef(null),
+    };
 
     // Get input controls
     const controls = useInputControls();
 
-    // Apply physics to vehicle
+    // Use vehicle physics
     const { speed, steering, position, rotation } = useVehiclePhysics({
       vehicleRef,
       controls,
     });
 
-    // Calculate distance traveled
-    useFrame(() => {
-      if (vehicleRef.current) {
-        const currentPos = vehicleRef.current.position.clone();
-        const delta = currentPos.distanceTo(lastPosition.current);
-        distanceTraveled.current += delta;
-        lastPosition.current = currentPos;
-
-        // Update vehicle stats if callback provided
-        if (updateVehicleStats) {
-          updateVehicleStats({
-            speed: Math.abs(speed),
-            distance: distanceTraveled.current,
-          });
-        }
-      }
-    });
-
-    // Sync with multiplayer
-    useMultiplayerSync({
-      vehicleRef,
+    // Create state for vehicle data that can be shared
+    const [vehicleState, setVehicleState] = useState({
       speed,
       steering,
-      username,
+      position,
+      rotation,
+    });
+
+    // Update vehicle state when physics values change
+    useEffect(() => {
+      setVehicleState({
+        speed,
+        steering,
+        position,
+        rotation,
+      });
+    }, [speed, steering, position, rotation]);
+
+    // Expose vehicle methods and properties to parent
+    useImperativeHandle(ref, () => ({
+      getPosition: () => position,
+      getRotation: () => rotation,
+      getSpeed: () => speed,
+      getSteering: () => steering,
+      getControls: () => controls,
+    }));
+
+    // Update vehicle stats for UI
+    useEffect(() => {
+      if (updateVehicleStats) {
+        updateVehicleStats({
+          speed: Math.abs(speed * 100).toFixed(0),
+          steering: (steering * 100).toFixed(0),
+        });
+      }
+    }, [speed, steering, updateVehicleStats]);
+
+    // Use multiplayer sync
+    useMultiplayerSync({
+      vehicleRef,
       room,
+      username,
+      speed,
+      steering,
+      cameraAngle: 0, // We'll update this later
     });
 
     // Rotate wheels based on speed and steering
     useFrame(() => {
-      const wheels = vehicleRef.current?.userData.wheels;
-      if (wheels) {
-        // Rotate wheels based on speed
-        wheels.frontLeft.current.rotation.x += speed;
-        wheels.frontRight.current.rotation.x += speed;
-        wheels.backLeft.current.rotation.x += speed;
-        wheels.backRight.current.rotation.x += speed;
+      // Front left wheel
+      if (wheelRefs.frontLeft.current) {
+        // Rotate wheel forward/backward based on speed
+        (wheelRefs.frontLeft.current as any).rotation.x += speed * 0.5;
+        // Apply steering angle
+        (wheelRefs.frontLeft.current as any).rotation.y = steering * 0.5;
+      }
+
+      // Front right wheel
+      if (wheelRefs.frontRight.current) {
+        (wheelRefs.frontRight.current as any).rotation.x += speed * 0.5;
+        (wheelRefs.frontRight.current as any).rotation.y = steering * 0.5;
+      }
+
+      // Back left wheel
+      if (wheelRefs.backLeft.current) {
+        (wheelRefs.backLeft.current as any).rotation.x += speed * 0.5;
+      }
+
+      // Back right wheel
+      if (wheelRefs.backRight.current) {
+        (wheelRefs.backRight.current as any).rotation.x += speed * 0.5;
       }
     });
 
     return (
-      <group ref={vehicleRef}>
-        <ThirdPersonCamera target={vehicleRef} />
+      <>
+        <VehicleStateContext.Provider value={vehicleState}>
+          <VehicleHUD speed={speed} />
+          <group
+            ref={vehicleRef}
+            position={position.toArray()}
+            rotation={[0, rotation, 0]}
+          >
+            <Jeep wheelRefs={wheelRefs} />
 
-        <Jeep />
-
-        {username && (
-          <Html position={[0, 2.2, 0]} center>
-            <div className="player-name">{username}</div>
-          </Html>
-        )}
-
-        {/* <VehicleHUD speed={speed} /> */}
-      </group>
+            {/* Camera follows the vehicle */}
+            <ThirdPersonCamera target={vehicleRef} controls={controls} />
+          </group>
+        </VehicleStateContext.Provider>
+      </>
     );
   }
 );
